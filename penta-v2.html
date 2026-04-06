@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penta — Construa seu sistema com IA. Sem programar.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & TOKENS ===== */
+:root {
+  --bg:#020408; --s1:#060c14; --s2:#0a1420;
+  --bd:rgba(99,179,255,0.08); --bdg:rgba(99,179,255,0.22);
+  --y:#E8FF47; --yd:rgba(232,255,71,0.08); --yg:rgba(232,255,71,0.15);
+  --cx:#00D4FF; --cxd:rgba(0,212,255,0.06);
+  --vx:#7C3AFF;
+  --t:#F0F4FF; --t2:#8899AA; --t3:#445566;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);overflow-x:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M60 0L0 0 0 60' fill='none' stroke='rgba(99,179,255,0.035)' stroke-width='0.5'/%3E%3C/svg%3E");
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ===== PROGRESS BAR ===== */
+#progress-bar{position:fixed;top:0;left:0;height:2px;background:var(--y);width:0%;z-index:10000;box-shadow:0 0 8px var(--y);transition:width .1s linear}
+
+/* ===== NAV ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+nav.scrolled{background:rgba(2,4,8,.88);border-color:var(--bd);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.nav-left{display:flex;align-items:center;gap:12px}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:4px;color:var(--t);text-transform:uppercase;cursor:default;user-select:none}
+.logo em{color:var(--y);font-style:normal}
+@keyframes glitch-s{0%,100%{transform:translate(0);filter:none}10%{transform:translate(-2px,1px);filter:hue-rotate(90deg) saturate(3)}20%{transform:translate(2px,-1px)}30%{transform:translate(-1px,2px);filter:none}40%{transform:translate(0)}}
+.logo.glitch{animation:glitch-s .4s linear}
+.beta-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cx);border:1px solid rgba(0,212,255,.3);background:var(--cxd);padding:3px 8px;border-radius:3px;letter-spacing:1px}
+.nav-btn{background:var(--y);color:#000;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:10px 24px;border-radius:6px;text-decoration:none;letter-spacing:.3px;transition:opacity .2s,transform .2s}
+.nav-btn:hover{opacity:.85;transform:translateY(-1px)}
+
+/* ===== HERO ===== */
+.hero{min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 48px 80px;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-5%;left:50%;transform:translateX(-50%);width:1000px;height:600px;background:radial-gradient(ellipse,rgba(232,255,71,.07) 0%,transparent 65%);pointer-events:none;z-index:0}
+#particle-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.hero-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:900px}
+
+/* Pill */
+.hero-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(0,212,255,.25);background:var(--cxd);color:var(--cx);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:7px 16px;border-radius:100px;margin-bottom:32px}
+.pill-dot{width:6px;height:6px;background:var(--cx);border-radius:50%}
+@keyframes pulse-d{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.pill-dot{animation:pulse-d 2s infinite}
+
+/* H1 */
+.hero h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(60px,11vw,148px);line-height:.92;letter-spacing:-2px;color:var(--t);margin-bottom:20px;text-transform:uppercase}
+.hero h1 .y{color:var(--y)}
+
+/* Typing */
+.hero-sub{font-family:'JetBrains Mono',monospace;font-size:clamp(13px,1.8vw,16px);color:var(--t2);line-height:1.6;margin-bottom:40px;min-height:1.6em}
+.cursor{display:inline-block;width:2px;height:1em;background:var(--cx);margin-left:2px;vertical-align:text-bottom}
+@keyframes blink-c{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{animation:blink-c .8s step-end infinite}
+
+/* ===== VSL ===== */
+.vsl-wrap{width:100%;max-width:840px;margin:0 auto 40px;position:relative}
+.vsl-terminal{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;border:1px solid rgba(232,255,71,.1);box-shadow:0 0 0 1px rgba(255,255,255,.03),0 0 60px rgba(0,0,0,.8);transition:box-shadow .3s}
+.vsl-terminal:hover{box-shadow:0 0 0 1px rgba(255,255,255,.05),0 0 80px rgba(232,255,71,.1),0 0 120px rgba(0,0,0,.8)}
+/* Corner brackets */
+.tc{position:absolute;z-index:10;width:18px;height:18px;pointer-events:none}
+.tc::before,.tc::after{content:'';position:absolute;background:var(--y)}
+.tc::before{width:100%;height:2px;top:0;left:0}
+.tc::after{width:2px;height:100%;top:0;left:0}
+.tc.tl{top:0;left:0}.tc.tr{top:0;right:0;transform:scaleX(-1)}.tc.bl{bottom:0;left:0;transform:scaleY(-1)}.tc.br{bottom:0;right:0;transform:scale(-1,-1)}
+
+.vsl-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;position:absolute;inset:0;background:linear-gradient(135deg,#050d1a 0%,#080808 50%,#0a0505 100%)}
+.vsl-placeholder::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none}
+.vsl-lbl{position:absolute;top:14px;left:14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:1px;z-index:2}
+.rec-badge{position:absolute;top:14px;right:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#FF4444;display:flex;align-items:center;gap:5px;letter-spacing:1px;z-index:2}
+@keyframes rec-b{0%,100%{opacity:1}50%{opacity:0}}
+.rec-dot{animation:rec-b 1.2s step-end infinite}
+.vsl-play-btn{width:80px;height:80px;background:var(--y);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;z-index:2}
+.vsl-play-btn:hover{transform:scale(1.08);box-shadow:0 0 50px rgba(232,255,71,.5)}
+.vsl-play-btn svg{margin-left:5px}
+.vsl-caption{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;position:relative;z-index:2}
+.vsl-prog{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.05);z-index:5}
+.vsl-prog-fill{height:100%;background:var(--y);width:0%}
+@keyframes fake-prog{from{width:0%}to{width:62%}}
+.vsl-prog-fill{animation:fake-prog 180s linear forwards}
+#vsl-frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
+
+/* ===== HERO CTA ===== */
+.hero-cta{display:inline-block;background:var(--y);color:#000;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;padding:20px 52px;border-radius:8px;text-decoration:none;letter-spacing:.2px;transition:transform .2s,box-shadow .2s;position:relative;z-index:2;margin-bottom:16px}
+.hero-cta:hover{transform:translateY(-3px);box-shadow:0 24px 70px rgba(232,255,71,.35)}
+.micro-proof{font-size:13px;color:var(--t3);margin-bottom:24px}
+.status-bar{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:.5px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.02);border:1px solid var(--bd);padding:8px 20px;border-radius:4px}
+.online-dot{color:#4ADE80;animation:pulse-d 2s infinite}
+
+/* ===== TICKER ===== */
+.ticker-section{background:var(--s1);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);overflow:hidden}
+.ticker-row{position:relative;padding:13px 0;overflow:hidden}
+.ticker-row+.ticker-row{border-top:1px solid var(--bd)}
+.ticker-row::before,.ticker-row::after{content:'';position:absolute;top:0;bottom:0;width:120px;z-index:2;pointer-events:none}
+.ticker-row::before{left:0;background:linear-gradient(90deg,var(--s1),transparent)}
+.ticker-row::after{right:0;background:linear-gradient(-90deg,var(--s1),transparent)}
+.ticker-track{display:flex;width:max-content}
+@keyframes tick-l{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes tick-r{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.ticker-track{animation:tick-l 22s linear infinite}
+.ticker-row.rev .ticker-track{animation:tick-r 17s linear infinite}
+.ticker-item{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;padding:0 24px;display:flex;align-items:center;gap:8px}
+.ticker-item::after{content:'∴';color:var(--y);opacity:.45;font-size:11px}
+
+/* ===== SECTIONS ===== */
+.section-inner{max-width:1140px;margin:0 auto;padding:0 48px}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--y);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;display:block}
+.section-h{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(40px,5.5vw,76px);line-height:.95;letter-spacing:-1px;text-transform:uppercase;margin-bottom:56px;color:var(--t)}
+
+/* ===== STEPS ===== */
+.steps-section{padding:120px 0}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:16px;overflow:hidden}
+.step-card{background:var(--s1);padding:44px 36px;position:relative;transition:background .3s;overflow:hidden}
+.step-card:hover{background:var(--s2)}
+.step-num-bg{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:120px;color:rgba(232,255,71,.04);line-height:1;position:absolute;top:-20px;right:-10px;letter-spacing:-4px;pointer-events:none;user-select:none}
+.step-badge{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;border-width:1px;border-style:solid;padding:3px 10px;border-radius:3px;display:inline-block;margin-bottom:20px}
+.step-card h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;margin-bottom:12px;letter-spacing:-.3px}
+.step-card p{font-size:14px;color:var(--t2);line-height:1.75}
+.step-hl{color:var(--y)}
+
+/* ===== SYSTEMS ===== */
+.systems-section{padding:120px 0;background:var(--s1);border-top:1px solid var(--bd)}
+.sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sys-card{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:28px 24px;position:relative;overflow:hidden;cursor:default;transition:border-color .3s,transform .3s,box-shadow .3s}
+/* Holographic hover */
+.sys-card::before{content:'';position:absolute;inset:-100%;background:conic-gradient(from 0deg,transparent 0deg,rgba(232,255,71,.07) 60deg,rgba(0,212,255,.07) 120deg,rgba(124,58,255,.05) 180deg,rgba(255,107,107,.04) 240deg,transparent 300deg);opacity:0;transition:opacity .4s;pointer-events:none}
+@keyframes holo-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.sys-card::before{animation:holo-spin 3s linear infinite paused}
+.sys-card:hover{border-color:rgba(99,179,255,.2);transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.sys-card:hover::before{opacity:1;animation-play-state:running}
+.sys-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.sys-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.sys-badge{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:3px;border-width:1px;border-style:solid}
+.sys-card h4{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-bottom:8px;letter-spacing:-.2px}
+.sys-card p{font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:16px}
+.sys-link{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;display:flex;align-items:center;gap:4px;text-decoration:none;transition:gap .2s}
+.sys-link:hover{gap:8px}
+
+/* ===== PRICING ===== */
+.pricing-section{padding:120px 0;text-align:center}
+/* Rotating gradient border wrapper */
+.price-wrap{max-width:520px;margin:0 auto;position:relative;border-radius:20px;padding:1px;overflow:hidden}
+.price-wrap::before{content:'';position:absolute;inset:-100%;background:conic-gradient(var(--y) 0deg,var(--cx) 90deg,var(--vx) 180deg,var(--y) 360deg);animation:spin-b 6s linear infinite;opacity:.2}
+@keyframes spin-b{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.price-card{background:var(--s1);border-radius:19px;padding:56px 48px;position:relative;overflow:hidden}
+.price-glow{position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:250px;background:radial-gradient(ellipse,rgba(232,255,71,.09) 0%,transparent 70%);pointer-events:none}
+.price-badge{display:inline-block;background:var(--y);color:#000;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:24px}
+.price-was{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t3);text-decoration:line-through;margin-bottom:4px}
+.price-display{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:110px;color:var(--y);line-height:1;letter-spacing:-4px;margin-bottom:4px}
+.price-cur{font-size:40px;vertical-align:super;letter-spacing:0}
+.price-period{font-size:13px;color:var(--t2);margin-bottom:36px}
+.price-list{list-style:none;text-align:left;margin-bottom:36px}
+.price-list li{padding:14px 0;border-bottom:1px solid var(--bd);font-size:15px;color:#CCD6E8;display:flex;align-items:center;gap:14px}
+.price-list li:last-child{border:none}
+.chk{width:22px;height:22px;min-width:22px;background:var(--yd);border:1px solid rgba(232,255,71,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--y)}
+@keyframes cta-pulse{0%,100%{box-shadow:0 0 20px rgba(232,255,71,.3),0 8px 40px rgba(232,255,71,.12)}50%{box-shadow:0 0 40px rgba(232,255,71,.5),0 8px 60px rgba(232,255,71,.22)}}
+.btn-buy{display:block;background:var(--y);color:#000;font-family:'Inter',sans-serif;font-weight:700;font-size:16px;padding:22px;border-radius:10px;text-decoration:none;letter-spacing:.3px;animation:cta-pulse 2s ease-in-out infinite;transition:transform .2s;margin-bottom:20px}
+.btn-buy:hover{transform:translateY(-3px)}
+.pay-methods{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:1px;margin-bottom:12px}
+.secure-txt{font-size:12px;color:var(--t3);display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* ===== FAQ ===== */
+.faq-section{padding:120px 0;background:var(--s1);border-top:1px solid var(--bd)}
+.faq-inner{max-width:700px;margin:0 auto;padding:0 48px}
+.fq{border-bottom:1px solid var(--bd);transition:background .2s,padding .2s;border-left:2px solid transparent}
+.fq.open{background:var(--yd);border-left-color:var(--y);padding-left:16px}
+.fq-q{display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:'Inter',sans-serif;font-size:16px;font-weight:500;color:var(--t);padding:22px 0;cursor:pointer;user-select:none}
+.fq-chev{min-width:24px;height:24px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .3s,border-color .3s;color:var(--t2)}
+.fq-chev svg{transition:transform .3s}
+.fq.open .fq-chev{border-color:rgba(232,255,71,.3);color:var(--y)}
+.fq.open .fq-chev svg{transform:rotate(180deg)}
+.fq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-size:14px;color:var(--t2);line-height:1.8}
+.fq.open .fq-a{max-height:200px;padding-bottom:20px}
+
+/* ===== FOOTER ===== */
+footer{background:var(--bg);padding:48px;position:relative}
+footer::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--y),var(--cx),var(--vx));opacity:.35}
+.footer-inner{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.foot-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px}
+.foot-logo em{color:var(--y);font-style:normal}
+.foot-tag{font-size:13px;color:var(--t3)}
+.foot-links{display:flex;gap:24px;justify-content:flex-end;list-style:none;flex-wrap:wrap}
+.foot-links a{font-size:13px;color:var(--t2);text-decoration:none;transition:color .2s}
+.foot-links a:hover{color:var(--y)}
+.foot-copy{grid-column:1/-1;text-align:center;font-size:11px;color:var(--t3);padding-top:24px;border-top:1px solid var(--bd)}
+
+/* ===== REVEAL ===== */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease}
+.reveal.on{opacity:1;transform:none}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .hero{padding:100px 20px 60px}
+  .section-inner{padding:0 20px}
+  .steps-section,.systems-section,.pricing-section,.faq-section{padding:80px 0}
+  .faq-inner{padding:0 20px}
+  .steps-grid,.sys-grid{grid-template-columns:1fr}
+  .price-card{padding:36px 24px}
+  .price-display{font-size:80px}
+  .price-cur{font-size:30px}
+  footer{padding:36px 20px}
+  .footer-inner{grid-template-columns:1fr;gap:24px}
+  .foot-links{justify-content:flex-start}
+  .hero-cta{padding:18px 32px;font-size:15px}
+  .vsl-play-btn{width:64px;height:64px}
+  .section-h{margin-bottom:36px}
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-left">
+    <div class="logo" id="logo">PENTA<em>.</em></div>
+    <span class="beta-badge">[BETA]</span>
+  </div>
+  <a href="#oferta" class="nav-btn">Começar agora →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <canvas id="particle-canvas"></canvas>
+  <div class="hero-content">
+
+    <div class="hero-pill reveal">
+      <span class="pill-dot"></span>
+      ⚡ NOVO · MÉTODO IA · SEM CÓDIGO
+    </div>
+
+    <h1 class="reveal">CONSTRUA SEU<br>SISTEMA COM<br><span class="y">IA.</span></h1>
+
+    <p class="hero-sub" id="typing-target"></p>
+
+    <!-- VSL -->
+    <div class="vsl-wrap reveal">
+      <div class="vsl-terminal">
+        <span class="tc tl"></span><span class="tc tr"></span>
+        <span class="tc bl"></span><span class="tc br"></span>
+        <div class="vsl-placeholder" id="vsl-ph">
+          <span class="vsl-lbl">PENTA · PREVIEW</span>
+          <div class="rec-badge"><span class="rec-dot">●</span>&nbsp;REC</div>
+          <button class="vsl-play-btn" id="vsl-btn" aria-label="Assistir">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 5l13 7-13 7V5z" fill="#000"/></svg>
+          </button>
+          <p class="vsl-caption">Assista antes de comprar — 3 minutos</p>
+          <div class="vsl-prog"><div class="vsl-prog-fill"></div></div>
+        </div>
+        <iframe id="vsl-frame" src="" allow="autoplay;fullscreen" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <a href="#oferta" class="hero-cta reveal">⚡ QUERO MEU SISTEMA — R$47 →</a>
+    <p class="micro-proof reveal">🔒 Pagamento seguro · ⚡ Acesso imediato · ♾️ Vitalício</p>
+    <div class="status-bar reveal">
+      <span class="online-dot">●</span>
+      SISTEMA ONLINE&nbsp;·&nbsp;latency: 0.3ms&nbsp;·&nbsp;model: gpt-4o&nbsp;·&nbsp;tokens: 847
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-section">
+  <div class="ticker-row"><div class="ticker-track" id="t1"></div></div>
+  <div class="ticker-row rev"><div class="ticker-track" id="t2"></div></div>
+</div>
+
+<!-- COMO FUNCIONA -->
+<section class="steps-section" id="como-funciona">
+  <div class="section-inner">
+    <span class="section-label reveal">[MÉTODO]</span>
+    <h2 class="section-h reveal">TRÊS PASSOS.<br>SISTEMA NO AR.</h2>
+    <div class="steps-grid">
+      <div class="step-card reveal">
+        <div class="step-num-bg">01</div>
+        <span class="step-badge" style="color:var(--cx);border-color:rgba(0,212,255,.2);background:var(--cxd)">[PASSO 01]</span>
+        <h3>Aprende o fundamento</h3>
+        <p>4 aulas de 6 minutos. Você entende como pensar sistemas e usar a IA do jeito certo — <span class="step-hl">sem código.</span></p>
+      </div>
+      <div class="step-card reveal" data-delay="80">
+        <div class="step-num-bg">02</div>
+        <span class="step-badge" style="color:var(--y);border-color:rgba(232,255,71,.2);background:var(--yd)">[PASSO 02]</span>
+        <h3>Usa o Prompt Mestre</h3>
+        <p>Responde uma anamnese sobre seu negócio. A IA transforma em sistema completo — <span class="step-hl">funcional de verdade.</span></p>
+      </div>
+      <div class="step-card reveal" data-delay="160">
+        <div class="step-num-bg">03</div>
+        <span class="step-badge" style="color:var(--vx);border-color:rgba(124,58,255,.25);background:rgba(124,58,255,.06)">[PASSO 03]</span>
+        <h3>Coloca no ar</h3>
+        <p>Hostinger por R$10/mês ou grátis via GitHub Pages. Domínio próprio, <span class="step-hl">link seguro, online.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SISTEMAS PRONTOS -->
+<section class="systems-section" id="sistemas">
+  <div class="section-inner">
+    <span class="section-label reveal">[SISTEMAS PRONTOS]</span>
+    <h2 class="section-h reveal">SÓ COPIAR<br>E COLAR.</h2>
+    <div class="sys-grid">
+
+      <div class="sys-card reveal">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(232,255,71,.1)">🏋️</div>
+          <span class="sys-badge" style="color:var(--y);border-color:rgba(232,255,71,.2);background:var(--yd)">[PRONTO]</span>
+        </div>
+        <h4>Plataforma de Treinos</h4>
+        <p>Vídeos por grupo muscular, estilo Netflix. Alunos acessam com um clique.</p>
+        <a href="#oferta" class="sys-link" style="color:var(--y)">→ Ver sistema</a>
+      </div>
+
+      <div class="sys-card reveal" data-delay="80">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(0,212,255,.1)">💈</div>
+          <span class="sys-badge" style="color:var(--cx);border-color:rgba(0,212,255,.2);background:var(--cxd)">[PRONTO]</span>
+        </div>
+        <h4>Agenda de Barbearia</h4>
+        <p>Agendamento automático direto no Google Agenda.</p>
+        <a href="#oferta" class="sys-link" style="color:var(--cx)">→ Ver sistema</a>
+      </div>
+
+      <div class="sys-card reveal" data-delay="160">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(255,107,107,.1)">🍕</div>
+          <span class="sys-badge" style="color:#FF6B6B;border-color:rgba(255,107,107,.2);background:rgba(255,107,107,.06)">[PRONTO]</span>
+        </div>
+        <h4>Sistema de Pedidos</h4>
+        <p>Carrinho + finalização direto no WhatsApp.</p>
+        <a href="#oferta" class="sys-link" style="color:#FF6B6B">→ Ver sistema</a>
+      </div>
+
+      <div class="sys-card reveal">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(78,205,196,.1)">🥗</div>
+          <span class="sys-badge" style="color:#4ECDC4;border-color:rgba(78,205,196,.2);background:rgba(78,205,196,.06)">[PRONTO]</span>
+        </div>
+        <h4>App de Nutricionista</h4>
+        <p>Planos alimentares com interface profissional por paciente.</p>
+        <a href="#oferta" class="sys-link" style="color:#4ECDC4">→ Ver sistema</a>
+      </div>
+
+      <div class="sys-card reveal" data-delay="80">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(124,58,255,.1)">🏥</div>
+          <span class="sys-badge" style="color:var(--vx);border-color:rgba(124,58,255,.25);background:rgba(124,58,255,.06)">[PRONTO]</span>
+        </div>
+        <h4>Gestão de Clínica</h4>
+        <p>Evolução de pacientes, organizado por sessão.</p>
+        <a href="#oferta" class="sys-link" style="color:var(--vx)">→ Ver sistema</a>
+      </div>
+
+      <div class="sys-card reveal" data-delay="160">
+        <div class="sys-card-header">
+          <div class="sys-icon" style="background:rgba(255,159,67,.1)">🛒</div>
+          <span class="sys-badge" style="color:#FF9F43;border-color:rgba(255,159,67,.2);background:rgba(255,159,67,.06)">[PRONTO]</span>
+        </div>
+        <h4>Catálogo de Loja</h4>
+        <p>Produtos com fotos, preços e pedido automático.</p>
+        <a href="#oferta" class="sys-link" style="color:#FF9F43">→ Ver sistema</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="oferta">
+  <div class="section-inner">
+    <span class="section-label reveal" style="display:block;text-align:center">[OFERTA]</span>
+    <h2 class="section-h reveal" style="text-align:center">COMECE<br>HOJE.</h2>
+    <div class="price-wrap reveal">
+      <div class="price-card">
+        <div class="price-glow"></div>
+        <div class="price-badge">ACESSO IMEDIATO</div>
+        <p class="price-was">DE: R$97</p>
+        <div class="price-display"><span class="price-cur">R$</span><span id="price-num">97</span></div>
+        <p class="price-period">Pagamento único · Acesso vitalício</p>
+        <ul class="price-list">
+          <li><div class="chk">✓</div>4 aulas de 6 minutos (direto ao ponto)</li>
+          <li><div class="chk">✓</div>6 sistemas prontos (copiar e colar)</li>
+          <li><div class="chk">✓</div>Prompt Mestre para qualquer negócio</li>
+          <li><div class="chk">✓</div>Passo a passo de hospedagem</li>
+          <li><div class="chk">✓</div>Atualizações futuras incluídas</li>
+        </ul>
+        <a href="#" class="btn-buy">⚡ QUERO MEU SISTEMA AGORA →</a>
+        <p class="pay-methods">PIX · CARTÃO · BOLETO</p>
+        <p class="secure-txt">🔒 Compra segura · Entrega imediata · 7 dias de garantia</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="faq-inner">
+    <span class="section-label reveal">[DÚVIDAS]</span>
+    <h2 class="section-h reveal">PERGUNTAS<br>FREQUENTES.</h2>
+    <div class="faq-list">
+
+      <div class="fq reveal"><div class="fq-q" onclick="toggleFaq(this)">Preciso saber programar?<span class="fq-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="fq-a">Não. Eu mesmo não sei. Você usa a IA como ferramenta — não aprende código.</div></div>
+
+      <div class="fq reveal" data-delay="60"><div class="fq-q" onclick="toggleFaq(this)">Precisa pagar hospedagem?<span class="fq-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="fq-a">Pode começar de graça via GitHub Pages. Para domínio próprio, Hostinger custa ~R$10/mês.</div></div>
+
+      <div class="fq reveal" data-delay="120"><div class="fq-q" onclick="toggleFaq(this)">Em quanto tempo fica pronto?<span class="fq-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="fq-a">Com os sistemas prontos: 20 minutos. Do zero com o Prompt Mestre: 1 a 2 horas na primeira vez.</div></div>
+
+      <div class="fq reveal" data-delay="180"><div class="fq-q" onclick="toggleFaq(this)">Serve pra qual negócio?<span class="fq-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="fq-a">Qualquer um. O Prompt Mestre é universal — você descreve e ele gera o sistema ideal pra você.</div></div>
+
+      <div class="fq reveal" data-delay="240"><div class="fq-q" onclick="toggleFaq(this)">E se eu não gostar?<span class="fq-chev"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><div class="fq-a">7 dias de garantia total. Pede o reembolso sem burocracia.</div></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="foot-logo">PENTA<em>.</em></div>
+      <p class="foot-tag">Construa seu sistema com IA. Sem programar.</p>
+    </div>
+    <ul class="foot-links">
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#sistemas">Sistemas</a></li>
+      <li><a href="#oferta">Oferta</a></li>
+    </ul>
+    <p class="foot-copy">© 2026 Penta Systems — Todos os direitos reservados</p>
+  </div>
+</footer>
+
+<script>
+// ===== PROGRESS BAR =====
+const pb = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+  const tot = document.body.scrollHeight - window.innerHeight;
+  pb.style.width = (tot > 0 ? (window.scrollY / tot) * 100 : 0) + '%';
+});
+
+// ===== NAV =====
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 40));
+
+// ===== GLITCH =====
+const logo = document.getElementById('logo');
+setInterval(() => {
+  logo.classList.add('glitch');
+  setTimeout(() => logo.classList.remove('glitch'), 420);
+}, 4000);
+
+// ===== PARTICLES =====
+(function () {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  const isMobile = window.innerWidth < 768;
+  const N = isMobile ? 20 : 42;
+  const DIST = isMobile ? 80 : 120;
+  const COLS = ['#E8FF47', '#00D4FF', '#E8FF47', '#00D4FF', '#7C3AFF'];
+  let W, H, pts;
+
+  function resize() {
+    const hero = document.getElementById('hero');
+    W = canvas.width = hero.offsetWidth;
+    H = canvas.height = hero.offsetHeight;
+  }
+
+  function init() {
+    pts = Array.from({ length: N }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - .5) * .45,
+      vy: (Math.random() - .5) * .45,
+      r: Math.random() * 1.8 + .8,
+      col: COLS[Math.floor(Math.random() * COLS.length)],
+      op: Math.random() * .45 + .15
+    }));
+  }
+
+  function hex2(v) { return Math.floor(v * 255).toString(16).padStart(2, '0'); }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + hex2(p.op);
+      ctx.fill();
+    });
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < DIST) {
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.strokeStyle = `rgba(99,179,255,${(1 - d / DIST) * .2})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); init(); });
+  resize(); init(); draw();
+})();
+
+// ===== TYPING =====
+(function () {
+  const target = document.getElementById('typing-target');
+  const text = '4 aulas. 6 minutos cada. Um sistema real no ar.';
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  target.appendChild(cursor);
+  let i = 0;
+  function type() {
+    if (i < text.length) {
+      target.insertBefore(document.createTextNode(text[i++]), cursor);
+      setTimeout(type, 35);
+    }
+  }
+  setTimeout(type, 900);
+})();
+
+// ===== TICKER =====
+(function () {
+  const items = ['Academias', 'Barbearias', 'Pizzarias', 'Nutricionistas', 'Personal Trainers', 'Clínicas', 'Infoprodutores', 'Lojas'];
+  const rev = [...items].reverse();
+  function build(arr, reps = 4) {
+    return arr.flatMap(() => arr).concat(arr.flatMap(() => arr))
+      .map(i => `<span class="ticker-item">${i}</span>`).join('');
+  }
+  function buildN(arr, n) {
+    let h = '';
+    for (let r = 0; r < n; r++) arr.forEach(x => h += `<span class="ticker-item">${x}</span>`);
+    return h;
+  }
+  document.getElementById('t1').innerHTML = buildN(items, 4);
+  document.getElementById('t2').innerHTML = buildN(rev, 4);
+})();
+
+// ===== REVEAL =====
+(function () {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const delay = parseInt(e.target.dataset.delay || 0);
+        setTimeout(() => e.target.classList.add('on'), delay);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: .1 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+// ===== PRICE COUNTER =====
+(function () {
+  const el = document.getElementById('price-num');
+  let done = false;
+  const io = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !done) {
+      done = true;
+      const start = 97, end = 47, dur = 1200, t0 = performance.now();
+      function step(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(start - (start - end) * e);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+  }, { threshold: .5 });
+  const card = document.querySelector('.price-wrap');
+  if (card) io.observe(card);
+})();
+
+// ===== VSL =====
+document.getElementById('vsl-btn').addEventListener('click', function () {
+  document.getElementById('vsl-ph').style.display = 'none';
+  const f = document.getElementById('vsl-frame');
+  f.src = 'https://www.youtube.com/embed/Cc6O9Dzae5w?autoplay=1&rel=0&modestbranding=1';
+  f.style.display = 'block';
+});
+
+// ===== FAQ =====
+function toggleFaq(el) {
+  const item = el.closest('.fq');
+  const was = item.classList.contains('open');
+  document.querySelectorAll('.fq').forEach(f => f.classList.remove('open'));
+  if (!was) item.classList.add('open');
+}
+</script>
+</body>
+</html>
